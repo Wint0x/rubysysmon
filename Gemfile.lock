@@ -3,6 +3,10 @@ GEM
   specs:
     awesome_print (1.9.2)
     ffi (1.16.3)
+    free_disk_space (1.0.0)
+      sys-filesystem
+    sys-filesystem (1.4.4)
+      ffi (~> 1.1)
     sys-proctable (1.3.0)
       ffi (~> 1.1)
 
@@ -11,6 +15,8 @@ PLATFORMS
 
 DEPENDENCIES
   awesome_print
+  free_disk_space
+  sys-filesystem
   sys-proctable (~> 1.2, >= 1.2.6)
 
 BUNDLED WITH
