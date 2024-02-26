@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'sys/proctable'
 require 'sys/filesystem'
 require 'free_disk_space'
@@ -70,8 +71,38 @@ class DISKMON
 
 end
 
+
 # Processes
 class PROCMON
+	
+	def enumerate_processes
+      parse(command)
+    end
+
+    private
+
+    def parse(str)
+      procs = str.split /\r?\n/
+      procs.shift
+      procs.map do |proc_str|
+        proc_obj = {}
+        proc_arr = proc_str.split ' '
+        sym_arr = [:user, :pid, :cpu, :mem, :vsz, :rss, :tt, :stat, :started, :time, :command]
+        sym_arr.each_with_index do |sym, i|
+          begin
+            proc_obj[sym] = Float(proc_arr[i])
+          rescue
+            proc_obj[sym] = proc_arr[i]
+          end
+        end
+
+        proc_obj
+      end
+    end
+
+    def command
+      `ps aux`
+    end
 
 end
 
@@ -105,6 +136,9 @@ def main
    puts "Total files encountered: \033[1m\033[36m#{disk.get_files_count}\033[0m"
    puts "\n=== [ Mounts ] ==="
    disk.get_mounts
+   puts "\n=== [ processes ] ==="
+   procs= PROCMON.new()
+   puts procs.enumerate_processes 
 
 end
 
