@@ -111,34 +111,90 @@ class NETMON
 
 end
 
+
+$options = {
+   user: false,
+   disk: false,
+   process: false,
+   net: false,
+}
+
 def main
+
+   # OptionParser
+   OptionParser.new do |opts|
+      opts.banner = "Usage: #{__FILE__} <options>"
+      opts.on_tail("-h", "--help", "Show this message") do
+         puts opts
+         exit
+      end
+
+      opts.on("-a", "--all", "Show everything") do
+         $options[:user] = true
+         $options[:disk] = true
+         $options[:process] = true
+         $options[:net] = true
+      end
+
+         opts.on("-u", "--user", "Display user information") do
+         $options[:user] = true
+      end
+
+         opts.on("-d", "--disk", "Display disk information") do
+         $options[:disk] = true
+      end
+         opts.on("-p", "--process", "Display process information") do
+         $options[:process] = true
+      end
+         opts.on("-n", "--net", "Display network information") do
+         $options[:net] = true
+      end
+
+   end.parse!
+
    disk = DISKMON.new()
+   procs = PROCMON.new() 
+  
+   # If options[:all]...
+   if $options[:user]
+      # General info
+      ETC.uname()
+      current_user = Array.new(ETC.current_login)
 
-   # General info
-   ETC.uname()
-   current_user = Array.new(ETC.current_login)
+      puts "=== [ Current User ] ==="
+      puts "Login: #{current_user[0]}"
+      puts "Username: #{current_user[1]}"
+      puts "uid: #{current_user[2]}" 
+      puts "gid: #{current_user[3]}"
+      puts "Dir: #{current_user[4]}"
+      puts "Shell: #{current_user[5]}"
+      puts "User Groups: #{current_user[6]}"
+      puts "=== [ All Groups ] ==="
+      ETC.enumerate_groups
+   end
 
-   puts "=== [ Current User ] ==="
-   puts "Login: #{current_user[0]}"
-   puts "Username: #{current_user[1]}"
-   puts "uid: #{current_user[2]}" 
-   puts "gid: #{current_user[3]}"
-   puts "Dir: #{current_user[4]}"
-   puts "Shell: #{current_user[5]}"
-   puts "User Groups: #{current_user[6]}"
-   puts "=== [ All Groups ] ==="
-   ETC.enumerate_groups
+   if $options[:disk]
+      puts "=== [ DISK ] ==="
+      # Disk info
+      ap "Free disk space: #{disk.free_disk_space.to_f.round(3)} GB"
+      ap "Total available disk space: #{disk.total_disk_space} GB"
+      puts "Total files encountered: \033[1m\033[36m#{disk.get_files_count}\033[0m"
+      puts "\n=== [ Mounts ] ==="
+      disk.get_mounts
 
-   puts "=== [ DISK ] ==="
-   # Disk info
-   ap "Free disk space: #{disk.free_disk_space.to_f.round(3)} GB"
-   ap "Total available disk space: #{disk.total_disk_space} GB"
-   puts "Total files encountered: \033[1m\033[36m#{disk.get_files_count}\033[0m"
-   puts "\n=== [ Mounts ] ==="
-   disk.get_mounts
-   puts "\n=== [ processes ] ==="
-   procs= PROCMON.new()
-   puts procs.enumerate_processes 
+   end
+
+   if $options[:process]
+      puts "\n=== [ processes ] ==="
+      puts procs.enumerate_processes
+
+      exit
+   end
+
+   if $options[:net]
+      puts "=== [ Network ] ==="
+      puts "Not implemented!\n"
+   end
 
 end
 
