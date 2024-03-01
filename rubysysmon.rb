@@ -5,6 +5,8 @@ require 'free_disk_space'
 require 'etc'
 require 'awesome_print'
 require 'optparse'
+require 'socket'
+
 # Test
 #Sys::ProcTable.ps{ |process|
  #  ap process
@@ -108,9 +110,74 @@ end
 
 # Network...
 class NETMON
+   def self.netstat
+    connections = []
 
+    Socket.getifaddrs.each do |ifaddr|
+      next unless ifaddr.addr.ipv4? || ifaddr.addr.ipv6?
+
+      interface_name = ifaddr.name
+      ip_address = ifaddr.addr.ip_address
+
+      # Iterate over all TCP connections
+      begin
+        TCPSocket.open(ip_address, 80) do |socket|  # Change 80 to your desired port number
+          socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+          local_address = socket.local_address.ip_address
+          local_port = socket.local_address.ip_port
+          remote_address = socket.remote_address.ip_address
+          remote_port = socket.remote_address.ip_port
+          state = 'ESTABLISHED'
+
+          connections << {
+            protocol: 'tcp',
+            local_address: local_address,
+            local_port: local_port,
+            remote_address: remote_address,
+            remote_port: remote_port,
+            state: state,
+            interface: interface_name
+          }
+        end
+      rescue StandardError => e
+        puts "Error: #{e.message}"
+      end
+
+      # Iterate over all UDP connections
+      begin
+        UDPSocket.open do |socket|
+          socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+          local_address = socket.local_address.ip_address
+          local_port = socket.local_address.ip_port
+
+          connections << {
+            protocol: 'udp',
+            local_address: local_address,
+            local_port: local_port,
+            remote_address: '0.0.0.0',
+            remote_port: '0',
+            state: '',
+            interface: interface_name
+          }
+        end
+      rescue StandardError => e
+        puts "Error: #{e.message}"
+      end
+    end
+
+    puts "%-5s %-21s %-21s %-8s %-8s %s" % ['Proto', 'Local Address', 'Foreign Address', 'State', 'PID', 'Interface']
+    connections.each do |conn|
+      puts "%-5s %-21s %-21s %-8s %-8s %s" % [
+        conn[:protocol].upcase,
+        "#{conn[:local_address]}:#{conn[:local_port]}",
+        "#{conn[:remote_address]}:#{conn[:remote_port]}",
+        conn[:state],
+        '', # PID is not implemented in this example
+        conn[:interface]
+      ]
+    end
+  end
 end
-
 
 $options = {
    user: false,
@@ -193,7 +260,7 @@ def main
 
    if $options[:net]
       puts "=== [ Network ] ==="
-      puts "Not implemented!\n"
+      NETMON.netstat
    end
 
 end
