@@ -97,20 +97,20 @@ class PROCMON
             proc_obj[sym] = proc_arr[i]
           end
         end
-
-        proc_obj
+         
+         ap proc_obj
       end
     end
 
     def command
-      `ps aux`
+     `ps aux`
     end
 
 end
 
-# Network...
+
 class NETMON
-   def self.netstat
+  def self.netstat(start_port = 1, end_port = 65535)
     connections = []
 
     Socket.getifaddrs.each do |ifaddr|
@@ -119,51 +119,53 @@ class NETMON
       interface_name = ifaddr.name
       ip_address = ifaddr.addr.ip_address
 
-      # Iterate over all TCP connections
-      begin
-        TCPSocket.open(ip_address, 80) do |socket|  # Change 80 to your desired port number
-          socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
-          local_address = socket.local_address.ip_address
-          local_port = socket.local_address.ip_port
-          remote_address = socket.remote_address.ip_address
-          remote_port = socket.remote_address.ip_port
-          state = 'ESTABLISHED'
+      (start_port..end_port).each do |port|
+        # Iterate over all TCP connections
+        begin
+          TCPSocket.open(ip_address, port) do |socket|
+            socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+            local_address = socket.local_address.ip_address
+            local_port = socket.local_address.ip_port
+            remote_address = socket.remote_address.ip_address
+            remote_port = socket.remote_address.ip_port
+            state = 'ESTABLISHED'
 
-          connections << {
-            protocol: 'tcp',
-            local_address: local_address,
-            local_port: local_port,
-            remote_address: remote_address,
-            remote_port: remote_port,
-            state: state,
-            interface: interface_name
-          }
+            connections << {
+              protocol: 'tcp',
+              local_address: local_address,
+              local_port: local_port,
+              remote_address: remote_address,
+              remote_port: remote_port,
+              state: state,
+              interface: interface_name
+            }
+          end
+        rescue StandardError => e
+          # Ignore errors for closed ports
         end
-      rescue StandardError => e
-        puts "Error: #{e.message}"
-      end
+     end
 
-      # Iterate over all UDP connections
-      begin
-        UDPSocket.open do |socket|
-          socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
-          local_address = socket.local_address.ip_address
-          local_port = socket.local_address.ip_port
+        # Iterate over all UDP connections
+        begin
+          UDPSocket.open do |socket|
+            socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+            local_address = socket.local_address.ip_address
+            local_port = socket.local_address.ip_port
 
-          connections << {
-            protocol: 'udp',
-            local_address: local_address,
-            local_port: local_port,
-            remote_address: '0.0.0.0',
-            remote_port: '0',
-            state: '',
-            interface: interface_name
-          }
+            connections << {
+              protocol: 'udp',
+              local_address: local_address,
+              local_port: local_port,
+              remote_address: '0.0.0.0',
+              remote_port: '0',
+              state: '',
+              interface: interface_name
+            }
+          end
+        rescue StandardError => e
+          # Ignore errors for closed ports
         end
-      rescue StandardError => e
-        puts "Error: #{e.message}"
       end
-    end
 
     puts "%-5s %-21s %-21s %-8s %-8s %s" % ['Proto', 'Local Address', 'Foreign Address', 'State', 'PID', 'Interface']
     connections.each do |conn|
@@ -178,6 +180,7 @@ class NETMON
     end
   end
 end
+
 
 $options = {
    user: false,
