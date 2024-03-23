@@ -6,4 +6,3 @@ gem 'sys-proctable', '~> 1.2', '>= 1.2.6'
 gem 'awesome_print'
 gem 'sys-filesystem'
 gem "free_disk_space"
-gem 'sysinfo', '~> 0.8.1'
