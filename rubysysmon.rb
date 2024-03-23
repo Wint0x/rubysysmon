@@ -43,6 +43,22 @@ class ETC
 
 end
 
+# Machine stuff
+class MACHINE
+   def self.get_cpu_info
+     cpu_info = {}
+     if not File.exist?('/proc/cpuinfo')
+         puts "Could not get cpu information! (missing /proc/cpuinfo)"
+         return
+     end
+     File.foreach('/proc/cpuinfo') do |line|
+       key, value = line.split(':').map(&:strip)
+       cpu_info[key] = value if key && value
+     end
+     pp cpu_info
+   end
+end
+
 # Disk stuff
 class DISKMON
    attr_reader :space_used
@@ -70,7 +86,6 @@ class DISKMON
          | mount, idx | puts ("[#{(idx + 1).to_s}] " + mount.name + "\n" + mount.mount_point + "\n\n")
       end
    end
-
 end
 
 
@@ -187,7 +202,10 @@ $options = {
    disk: false,
    process: false,
    net: false,
+   machine: false,
 }
+
+ARGV << "--help" if ARGV.empty?
 
 def main
 
@@ -204,6 +222,11 @@ def main
          $options[:disk] = true
          $options[:process] = true
          $options[:net] = true
+         $options[:machine] = true
+      end
+
+         opts.on("-m", "--machine", "Display hardware information") do
+         $options[:machine] = true
       end
 
          opts.on("-u", "--user", "Display user information") do
@@ -264,6 +287,11 @@ def main
    if $options[:net]
       puts "=== [ Network ] ==="
       NETMON.netstat
+   end
+
+   if $options[:machine]
+      puts "=== [ MACHINE ] ==="
+      MACHINE.get_cpu_info
    end
 
 end
